@@ -159,7 +159,7 @@ export default function Home() {
               generatePDF();
             }
           }}
-          placeholder="https://www.instagram.com/p/..."
+          placeholder="Paste Instagram post link here..."
           style={{
             width: "100%",
             boxSizing: "border-box",
@@ -169,6 +169,8 @@ export default function Home() {
             fontSize: "15px",
             outline: "none",
             marginBottom: "15px",
+            color: "#172033",
+            backgroundColor: "#ffffff",
           }}
         />
 
