@@ -2,6 +2,35 @@
 
 import { useState } from "react";
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function requestWithRetry(url, options, retries = 3) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+
+      if (response.ok) {
+        return response;
+      }
+
+      const data = await response.json().catch(() => ({}));
+      lastError = new Error(
+        data.error || `Request failed with status ${response.status}`
+      );
+    } catch (error) {
+      lastError = error;
+    }
+
+    if (attempt < retries) {
+      await sleep(5000);
+    }
+  }
+
+  throw lastError || new Error("Request failed.");
+}
+
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -13,24 +42,32 @@ export default function Home() {
       return;
     }
 
+    if (!url.includes("instagram.com")) {
+      setMessage("Please enter a valid Instagram URL.");
+      return;
+    }
+
     setLoading(true);
-    setMessage("Creating your PDF...");
+    setMessage("🔄 Starting PDF service...");
 
     try {
-      const response = await fetch("/api/instagram", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: url.trim(),
-        }),
-      });
+      setMessage("🔄 Waking up PDF service...");
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "PDF generation failed.");
-      }
+      const response = await requestWithRetry(
+        "/api/instagram",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: url.trim(),
+          }),
+        },
+        12
+      );
+
+      setMessage("📄 PDF created successfully!");
 
       const blob = await response.blob();
 
@@ -45,11 +82,12 @@ export default function Home() {
       link.remove();
 
       window.URL.revokeObjectURL(downloadUrl);
-
-      setMessage("PDF created successfully! 🎉");
     } catch (error) {
       console.error(error);
-      setMessage(error.message || "Something went wrong.");
+
+      setMessage(
+        "❌ Unable to create PDF. Please wait a little and try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -177,6 +215,17 @@ export default function Home() {
           }}
         >
           One Instagram carousel → One PDF
+        </div>
+
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: "20px",
+            color: "#98a2b3",
+            fontSize: "12px",
+          }}
+        >
+          by Saturn IT Solution @anshu
         </div>
       </div>
     </main>
