@@ -125,7 +125,7 @@ export default function Home() {
               color: "#172033",
             }}
           >
-            UPSC Notes → PDF
+            Insta_Notes → PDF
           </h1>
 
           <p
